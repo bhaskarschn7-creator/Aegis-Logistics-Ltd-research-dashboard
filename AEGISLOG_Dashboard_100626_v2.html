@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEGISLOG · Aegis Logistics Ltd — Coverage Dashboard · 10-Jun-2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#10141a; --panel:#161c24; --panel2:#1b232d; --line:#2a3440; --line2:#222b35;
+  --ink:#e9e4d8; --ink2:#a8b0ba; --mut:#6d7884;
+  --amber:#d9a441; --teal:#56a8a3; --rust:#c4604f; --green:#5d9e6b; --red:#c4604f; --yellow:#cfa93f;
+  --chip-r:#3a2422; --chip-y:#37301c; --chip-g:#1f2e23;
+  --hd-font:Georgia,'Iowan Old Style','Times New Roman',serif;
+  --bd-font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --shadow:0 1px 6px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  --bg:#f4f1e9; --panel:#fdfcf8; --panel2:#f0ecdf; --line:#d8d2c2; --line2:#e3ddcf;
+  --ink:#21262c; --ink2:#4d565f; --mut:#828a93;
+  --amber:#a8761d; --teal:#2e7672; --rust:#a8442f; --green:#3c7a4b; --red:#a8442f; --yellow:#8a6d14;
+  --chip-r:#f4dcd7; --chip-y:#f1e8c8; --chip-g:#d9e9dc;
+  --shadow:0 1px 5px rgba(60,50,30,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--bd-font);font-size:14.5px;line-height:1.55;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4,.serif{font-family:var(--hd-font);font-weight:600;letter-spacing:.1px}
+a{color:var(--teal);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1240px;margin:0 auto;padding:0 18px}
+/* ---------- sticky coverage header ---------- */
+#covhead{position:sticky;top:0;z-index:60;background:var(--bg);border-bottom:2px solid var(--amber);box-shadow:var(--shadow)}
+.hd-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px 22px;padding:10px 0 4px}
+.hd-top h1{font-size:21px}
+.hd-top .tick{color:var(--amber);font-size:13px;letter-spacing:1.4px}
+.hd-kv{display:flex;flex-wrap:wrap;gap:4px 20px;padding:2px 0 8px;font-size:12.5px;color:var(--ink2)}
+.hd-kv b{color:var(--ink);font-weight:600}
+.hd-kv .up{color:var(--green)} .hd-kv .dn{color:var(--red)}
+.badge{display:inline-block;padding:1px 8px;border:1px solid var(--line);border-radius:10px;font-size:11px;color:var(--ink2);margin-right:5px}
+.rating{background:var(--amber);color:#14110a;font-weight:700;padding:2px 11px;border-radius:3px;font-size:13px;letter-spacing:.6px}
+#themeBtn{margin-left:auto;background:none;border:1px solid var(--line);color:var(--ink2);padding:3px 12px;border-radius:14px;cursor:pointer;font-size:12px}
+#themeBtn:hover{border-color:var(--amber);color:var(--ink)}
+/* key ratio card row */
+.kcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:8px;padding:8px 0 12px}
+.kc{background:var(--panel);border:1px solid var(--line2);border-radius:6px;padding:7px 10px}
+.kc .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)}
+.kc .v{font-size:16.5px;font-weight:650;margin-top:1px}
+.kc .s{font-size:10.5px;color:var(--ink2)}
+/* ---------- tabs ---------- */
+#tabbar{display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:thin}
+#tabbar button{flex:0 0 auto;background:none;border:none;border-bottom:3px solid transparent;color:var(--ink2);font-family:var(--hd-font);font-size:14px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+#tabbar button:hover{color:var(--ink)}
+#tabbar button.on{color:var(--amber);border-bottom-color:var(--amber)}
+.panel{display:none;padding:20px 0 50px}
+.panel.on{display:block}
+/* ---------- common blocks ---------- */
+.sec{margin-bottom:26px}
+.sec>h2{font-size:18px;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:12px}
+.sec>h2 .sub{font-family:var(--bd-font);font-size:11.5px;color:var(--mut);font-weight:400;margin-left:10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid32{display:grid;grid-template-columns:3fr 2fr;gap:18px}
+@media(max-width:880px){.grid2,.grid3,.grid32{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:14px 16px}
+.card h3{font-size:14.5px;margin-bottom:8px;color:var(--amber)}
+.note{font-size:12px;color:var(--ink2)}
+.mut{color:var(--mut);font-size:11.5px}
+.lbl{font-size:10px;color:var(--mut);letter-spacing:.3px}
+.figtext{font-size:12.5px;color:var(--ink2);margin-top:8px;border-left:2px solid var(--line);padding-left:10px}
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:12.8px}
+.tblwrap{overflow-x:auto}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:var(--mut);font-weight:600;text-align:right;padding:6px 8px;border-bottom:1.5px solid var(--line);white-space:nowrap}
+td{padding:5.5px 8px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr.tot td{border-top:1.5px solid var(--line);font-weight:650}
+td.pos{color:var(--green)} td.neg{color:var(--red)}
+td.hi{color:var(--amber);font-weight:650}
+/* flags & chips */
+.fr,.fy,.fg{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.fr{background:var(--red)} .fy{background:var(--yellow)} .fg{background:var(--green)}
+.chip{display:inline-block;padding:2px 10px;border-radius:11px;font-size:11.5px;margin:2px 3px 2px 0;border:1px solid var(--line)}
+.chip.r{background:var(--chip-r)} .chip.y{background:var(--chip-y)} .chip.g{background:var(--chip-g)}
+.gradechip{display:inline-block;min-width:34px;text-align:center;padding:3px 8px;border-radius:4px;font-weight:700;font-size:13px;margin-right:6px}
+/* heatmap */
+.heat td{font-weight:600;font-size:12.5px}
+.h1c{background:#5a2e26;color:#f3d9d2}.h2c{background:#6e4a28;color:#f6e7cd}.h3c{background:#73611f;color:#f5edcc}.h4c{background:#4d6b35;color:#e2efd6}.h5c{background:#2e6b46;color:#d6efe0}
+[data-theme="light"] .h1c{background:#e8b7ab;color:#5a1d10}[data-theme="light"] .h2c{background:#ecd2a8;color:#5d3c0c}[data-theme="light"] .h3c{background:#ece2a4;color:#564a08}[data-theme="light"] .h4c{background:#cfe3b6;color:#2e4d14}[data-theme="light"] .h5c{background:#b6dfc4;color:#114d2a}
+td.basecell{outline:2.5px solid var(--amber);outline-offset:-2.5px}
+/* football field */
+.ff{position:relative;margin:10px 0}
+.ffrow{display:flex;align-items:center;margin:9px 0}
+.ffl{flex:0 0 215px;font-size:12.3px;color:var(--ink2);padding-right:8px}
+.fftrack{flex:1;position:relative;height:20px;background:var(--panel2);border-radius:3px}
+.ffbar{position:absolute;top:3px;height:14px;border-radius:3px;opacity:.85}
+.ffpt{position:absolute;top:0;width:3px;height:20px;background:var(--ink)}
+.ffax{display:flex;justify-content:space-between;font-size:10.5px;color:var(--mut);margin-left:215px}
+.cmpline{position:absolute;top:0;bottom:18px;width:2px;background:var(--rust);z-index:5}
+.cmptag{position:absolute;top:-16px;transform:translateX(-50%);font-size:10.5px;color:var(--rust);font-weight:700}
+/* scenario cards */
+.scen{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:760px){.scen{grid-template-columns:1fr}}
+.sc{border-radius:8px;padding:13px 15px;border:1px solid var(--line2);background:var(--panel)}
+.sc.bull{border-top:3px solid var(--green)}.sc.base{border-top:3px solid var(--amber)}.sc.bear{border-top:3px solid var(--red)}
+.sc .tp{font-size:23px;font-weight:700;font-family:var(--hd-font)}
+.sc .pct{font-size:14px;font-weight:650}
+/* charts */
+.chartbox{position:relative;height:265px}
+.chartbox.tall{height:300px}.chartbox.short{height:215px}
+canvas{max-width:100%}
+/* risk cards */
+.riskcard{border-left:3px solid var(--red);background:var(--panel);border-radius:0 6px 6px 0;padding:9px 13px;margin-bottom:8px}
+.riskcard.med{border-left-color:var(--yellow)} .riskcard.low{border-left-color:var(--green)}
+.riskcard b{font-size:13px}
+.riskcard .src{font-size:10.5px;color:var(--mut)}
+/* variant table */
+.vp{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:880px){.vp{grid-template-columns:1fr 1fr}}
+.vp .card h3{font-size:13px}
+.quote{font-family:var(--hd-font);font-size:16px;font-style:italic;color:var(--ink);border-left:3px solid var(--amber);padding:6px 14px;margin:10px 0}
+.quote .who{display:block;font-size:11.5px;font-style:normal;color:var(--mut);margin-top:5px}
+.kvline{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line2);padding:4px 0;font-size:12.8px}
+.kvline span:first-child{color:var(--ink2)}
+footer{border-top:1px solid var(--line);padding:18px 0 40px;font-size:11.5px;color:var(--mut)}
+/* print */
+@media print{
+  body{background:#fff;color:#111;font-size:11px}
+  #themeBtn,#tabbar{display:none}
+  #covhead{position:static;border-bottom:2px solid #999}
+  .panel{display:block!important;page-break-before:always;padding:8px 0}
+  .panel:first-of-type{page-break-before:avoid}
+  .card,.kc,.sc,.riskcard{break-inside:avoid;border:1px solid #ccc;background:#fff}
+  .chartbox{height:230px}
+  table{font-size:10px}
+  a{color:#111}
+}
+</style>
+</head>
+<body>
+<!-- ================= STICKY COVERAGE HEADER ================= -->
+<div id="covhead"><div class="wrap">
+  <div class="hd-top">
+    <h1>Aegis Logistics Ltd</h1>
+    <span class="tick">NSE: AEGISLOG &nbsp;·&nbsp; BSE: 500003</span>
+    <span class="rating">ACCUMULATE</span>
+    <button id="themeBtn" onclick="flipTheme()">☀ Light</button>
+  </div>
+  <div class="hd-kv">
+    <span>CMP <b>₹756.00</b> <span class="lbl">[Reported] NSE · 10-Jun-2026 (Screener live; 09-Jun close ₹782.65 Dhan — conflict shown)</span></span>
+    <span>Mkt cap <b>₹26,546 Cr</b></span>
+    <span>12M TP <b>₹855</b> <span class="up">(+13.1%)</span> <span class="lbl">30x FY27e owners' EPS ≈ consensus mean</span></span>
+    <span>Risk/Reward <b>1.34x</b></span>
+    <span>52-wk <b>₹944.60 / ₹576.10</b></span>
+    <span>Free float <b>41.9%</b> <span class="lbl">[Computed]</span></span>
+    <span>ADV <b>~10.1 lakh sh (≈₹76 Cr)</b> <span class="lbl">[Computed: vol [Reported web 08-Jun] × CMP ₹756]</span></span>
+  </div>
+  <div class="hd-kv" style="padding-top:0">
+    <span class="badge">Nifty Smallcap 100</span><span class="badge">Nifty 500</span><span class="badge">Nifty Energy</span><span class="badge">BSE 500</span><span class="badge">F&amp;O: Yes (NSE derivatives)</span>
+    <span class="badge">CARE AA / Stable · A1+</span>
+    <a class="badge" href="https://www.screener.in/company/AEGISLOG/consolidated/" target="_blank">Screener.in ↗</a>
+    <span class="lbl" style="align-self:center">Anchors: RBI repo 5.25% · 10-yr G-Sec 6.95% (05-Jun-26) · Basis: CONSOLIDATED · FY Apr–Mar</span>
+  </div>
+  <div class="kcards">
+    <div class="kc"><div class="l">P/E (TTM)</div><div class="v">29.54x</div><div class="s">3-yr avg 31.17x</div></div>
+    <div class="kc"><div class="l">EV/EBITDA</div><div class="v">16.90x</div><div class="s">norm. ₹1,599 Cr · stat. 30.30x ⚑</div></div>
+    <div class="kc"><div class="l">P/B</div><div class="v">4.38x</div><div class="s">BVPS ₹172.51</div></div>
+    <div class="kc"><div class="l">RoE (owners)</div><div class="v">14.8%</div><div class="s">Screener 16.8% — both shown</div></div>
+    <div class="kc"><div class="l">RoCE</div><div class="v">15.5%</div><div class="s">FY26 [Computed]</div></div>
+    <div class="kc"><div class="l">Net debt</div><div class="v">Net cash</div><div class="s">cash ₹4,194 Cr &gt; debt ex-lease</div></div>
+    <div class="kc"><div class="l">LPG throughput</div><div class="v">5,152 kMT</div><div class="s">FY26 +14% · record</div></div>
+    <div class="kc"><div class="l">Distribution vol</div><div class="v">754 kMT</div><div class="s">FY26 +45% · record</div></div>
+    <div class="kc"><div class="l">Div / yield</div><div class="v">₹8.70 · 1.2%</div><div class="s">FY26 (final ₹6.70)</div></div>
+  </div>
+  <nav id="tabbar">
+    <button class="on" data-t="snapshot">Snapshot</button>
+    <button data-t="financials">Financials</button>
+    <button data-t="estimates">Estimates</button>
+    <button data-t="valuation">Valuation</button>
+    <button data-t="business">Business</button>
+    <button data-t="concall">Concall</button>
+    <button data-t="growth">Growth &amp; Catalysts</button>
+    <button data-t="ownership">Ownership</button>
+    <button data-t="risks">Risks &amp; Quality</button>
+    <button data-t="thesis">Thesis</button>
+  </nav>
+</div></div>
+<div class="wrap">
+<!-- ================= TAB 1 · SNAPSHOT ================= -->
+<section class="panel on" id="p-snapshot">
+  <div class="sec">
+    <h2>The business in four sentences</h2>
+    <p>Aegis Logistics is India's largest independent owner-operator of LPG and liquid bulk-storage terminals at major ports (Mumbai, JNPT, Kandla, Pipavav, Haldia, Mangalore, Kochi), paired with an asset-light LPG sourcing-and-distribution arm (~90% of revenue, ~10% segment margin) <span class="lbl">[AR FY25 · 'Segments']</span>. The crown-jewel terminal assets now sit inside Aegis Vopak Terminals (AVTL) — a JV with Royal Vopak, listed Jun-2025, in which Aegis holds 44.71% <span class="lbl">[Reported]</span>. Terminalling is a take-or-pay annuity (liquid-segment margin 62.2% FY25); the investable idea is a ₹10,000 Cr gross capex build to FY27 (incl. India's first independent ammonia terminal) funded post-IPO from a net-cash parent balance sheet <span class="lbl">[Concall Q3FY26 p8 · CARE 2026 p1]</span>. FY26 delivered record everything — revenue ₹8,333 Cr (+23%), PAT ₹1,107 Cr (+41%), throughput 5,152 kMT — but a rising minority share means owners' EPS (+35%) lags headline PAT <span class="lbl">[Provisional · IP Q4FY26 s12,s14]</span>.</p>
+  </div>
+
+  <div class="grid3 sec">
+    <div class="card"><h3>TTM (FY26) scale</h3>
+      <div class="kvline"><span>Revenue</span><span><b>₹8,333 Cr</b> +23.2% <span class="lbl">[Provisional]</span></span></div>
+      <div class="kvline"><span>Normalized EBITDA</span><span><b>₹1,599 Cr</b> +36% <span class="lbl">[Provisional · mgmt]</span></span></div>
+      <div class="kvline"><span>Operating profit (stat.)</span><span><b>₹1,452 Cr</b> · OPM 17.4% <span class="lbl">[Computed]</span></span></div>
+      <div class="kvline"><span>PAT (total / owners)</span><span><b>₹1,107 / ₹898 Cr</b> <span class="lbl">[Provisional]</span></span></div>
+      <div class="kvline"><span>EPS (owners)</span><span><b>₹25.59</b> <span class="lbl">[Provisional]</span></span></div>
+    </div>
+    <div class="card"><h3>Compounding record</h3>
+      <div class="kvline"><span>EPS CAGR FY22–26</span><span><b>25.9%</b> <span class="lbl">[Computed]</span> — guidance MET</span></div>
+      <div class="kvline"><span>PAT CAGR 5-yr</span><span><b>32%</b> <span class="lbl">[Reported · Screener]</span></span></div>
+      <div class="kvline"><span>Sales CAGR 5-yr / 3-yr</span><span><b>17% / −1%</b> (pass-through mix)</span></div>
+      <div class="kvline"><span>Op-profit CAGR FY21–26</span><span><b>30.2%</b> <span class="lbl">[Computed]</span></span></div>
+      <div class="kvline"><span>PEG (P/E ÷ fwd EPS gr.)</span><span><b>1.48x</b> <span class="lbl">[Computed: 29.54x ÷ ~20% fwd EPS CAGR]</span></span></div>
+    </div>
+    <div class="card"><h3>Holding &amp; payout</h3>
+      <div class="kvline"><span>Promoter (Mar-26)</span><span><b>58.10%</b> · QoQ unchanged</span></div>
+      <div class="kvline"><span>Promoter pledge</span><span><b>NIL</b> — no-encumbrance filed 07-Apr-26</span></div>
+      <div class="kvline"><span>FII / DII (Mar-26)</span><span><b>19.56% / 3.67%</b> <span class="lbl">[Reported · Screener; web sources conflict — see Ownership]</span></span></div>
+      <div class="kvline"><span>FY26 dividend</span><span><b>₹8.70</b> (yield 1.2%, payout ~34%)</span></div>
+      <div class="kvline"><span>Shares o/s</span><span><b>35.10 Cr</b> · FV ₹1</span></div>
+    </div>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>Pros — what screens well</h3>
+      <p class="note">Record FY26 across revenue, normalized EBITDA, PAT and all three LPG volume lines <span class="lbl">[IP Q4FY26 s22]</span>. Parent net-debt-negative post AVTL IPO; CARE AA/Stable · A1+ reaffirmed 25-Mar-2026 <span class="lbl">[CreditRating 2026 p1]</span>. Zero promoter pledge; 25%-EPS-CAGR guidance delivered (25.9% FY22–26). Distribution volumes +45% — the structural margin kicker (₹4,000→₹7,000/t, guided sustainable). Expected good quarter <span class="lbl">[Screener]</span>.</p>
+      <h3 style="margin-top:12px">Cons — what screens badly</h3>
+      <p class="note">Trades at 4.4x book; Screener flags possible interest-cost capitalisation on both AEGISLOG and AVTL <span class="lbl">[Screener machine flags]</span>. FCF negative every year of the build (FY26 −₹505 Cr); other income = 22.8% of PBT flatters PAT; minority interest claim doubled to ₹2,729 Cr — owners get a shrinking slice of consolidated growth <span class="lbl">[IP Q4FY26 s14]</span>. KGPL pipeline tie-in has slipped repeatedly (third-party dependency). ROCE 3-yr avg ~14% — below the 15% hurdle: capex-heavy build-out with assets at 20–25% starting utilisation suppresses returns until ramp.</p>
+    </div>
+    <div class="card">
+      <h3>Composite quality scorecard <span class="lbl">1–5 · [Computed, basis stated]</span></h3>
+      <div class="chartbox short"><canvas id="chRadar"></canvas></div>
+      <div style="margin-top:8px">
+        <span class="gradechip" style="background:var(--chip-g)">4</span>Growth — EPS 25.9% 4-yr CAGR; all volume lines at records<br>
+        <span class="gradechip" style="background:var(--chip-y)">3</span>Profitability — OPM 17.4% rising, but RoCE ~15% mid-build<br>
+        <span class="gradechip" style="background:var(--chip-g)">4</span>Balance sheet — net cash, AA; ⚑ ST-heavy ex-lease debt mix<br>
+        <span class="gradechip" style="background:var(--chip-y)">3</span>Earnings quality — clean audit, but NCI drag + other-income reliance + negative FCF<br>
+        <span class="gradechip" style="background:var(--chip-y)">3</span>Governance — zero pledge, clean opinions; AVTL RPT complexity, KGPL goalpost shifts<br>
+        <span class="gradechip" style="background:var(--chip-r)">2</span>Valuation — 29.5x P/E; CMP sits above DCF-Gordon SOTP ₹541<br>
+        <b>Overall: 3.2 / 5 — high-quality infra compounder, fully priced; entry discipline matters.</b>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid32 sec">
+    <div class="card">
+      <h3>Relative performance — indexed to 100 <span class="lbl">[Estimated from CAGRs — Screener stock; index returns approximate]</span></h3>
+      <div class="chartbox"><canvas id="chRel"></canvas></div>
+      <p class="figtext">Stock price CAGR: 1-yr <b>−5%</b>, 3-yr <b>+34%</b>, 5-yr <b>+16%</b> [Reported · Screener] vs Nifty 50 ~+10%/yr and Nifty Smallcap 100 ~+14%/yr over 3yrs [Estimated]. Massive 3-yr alpha, given back partially in the last 12 months.</p>
+    </div>
+    <div class="card">
+      <h3>Technical position <span class="lbl">[Computed]</span></h3>
+      <div class="kvline"><span>52-wk range position</span><span><b>48.8%</b> (₹756 in ₹576–945)</span></div>
+      <div class="kvline"><span>Max drawdown (52-wk)</span><span><b>−39.0%</b> (₹944.6 → ₹576.1)</span></div>
+      <div class="kvline"><span>Beta</span><span><b>1.45</b> 1-yr [Reported web] · 0.65 5-yr monthly (Yahoo) — conflict shown; model uses 1.05 [E]</span></div>
+      <div class="kvline"><span>1-yr return</span><span class="dn"><b>−5%</b> vs mkt cap −4.9%</span></div>
+      <div class="kvline"><span>Liquidity</span><span>ADV ~10.1 lakh sh <span class="lbl">[Reported web 08-Jun]</span>; in F&amp;O — exit risk low</span></div>
+      <p class="note" style="margin-top:8px">Stock de-rated ~20% from Sep-25 highs while EPS grew 35% — multiple compression, not earnings damage.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 2 · FINANCIALS ================= -->
+<section class="panel" id="p-financials">
+  <div class="sec">
+    <h2>Five-year consolidated record <span class="sub">₹ Cr · FY22–FY25 [Reported · AR-Validated] · FY26 [Provisional] · source: data pack 'Annual_PL'</span></h2>
+    <div class="tblwrap"><table>
+      <tr><th>₹ Cr / ratio</th><th>FY22</th><th>FY23</th><th>FY24</th><th>FY25</th><th>FY26</th></tr>
+      <tr><td>Revenue</td><td>4,631</td><td>8,627</td><td>7,046</td><td>6,764</td><td>8,333</td></tr>
+      <tr><td>Revenue growth YoY %</td><td>20.5</td><td>86.3</td><td class="neg">−18.3</td><td class="neg">−4.0</td><td class="pos">23.2</td></tr>
+      <tr><td>Operating profit [Computed]</td><td>535</td><td>672</td><td>923</td><td>1,098</td><td>1,452</td></tr>
+      <tr><td>OPM %</td><td>11.5</td><td>7.8</td><td>13.1</td><td>16.2</td><td class="hi">17.4</td></tr>
+      <tr><td>Other income</td><td>39</td><td>187</td><td>190</td><td>208</td><td class="hi">327</td></tr>
+      <tr><td>Interest</td><td>22</td><td>88</td><td>116</td><td>165</td><td>146</td></tr>
+      <tr><td>Depreciation</td><td>79</td><td>126</td><td>135</td><td>152</td><td>199</td></tr>
+      <tr><td>PBT</td><td>472</td><td>645</td><td>861</td><td>989</td><td>1,433</td></tr>
+      <tr><td>PAT (total incl NCI)</td><td>385</td><td>511</td><td>672</td><td>787</td><td>1,107</td></tr>
+      <tr><td>PAT to owners</td><td>358</td><td>463</td><td>569</td><td>663</td><td>898</td></tr>
+      <tr><td>Non-controlling interest</td><td>27</td><td>48</td><td>103</td><td>124</td><td class="hi">208</td></tr>
+      <tr><td>EPS ₹ (owners)</td><td>10.19</td><td>13.19</td><td>16.22</td><td>18.90</td><td>25.59</td></tr>
+      <tr><td>RoE % (owners)</td><td>16.4</td><td>13.1</td><td>14.6</td><td>14.3</td><td>14.8</td></tr>
+      <tr><td>RoCE %</td><td>16.4</td><td>13.4</td><td>14.9</td><td>12.5</td><td>15.5</td></tr>
+      <tr><td>D/E incl lease (x)</td><td>0.38</td><td>0.54</td><td>0.68</td><td>0.99</td><td>0.69</td></tr>
+      <tr><td>CFO</td><td>280</td><td>358</td><td>656</td><td>558</td><td class="hi">2,028</td></tr>
+      <tr><td>CFO / PAT (total)</td><td class="neg">0.73</td><td class="neg">0.70</td><td>0.98</td><td class="neg">0.71</td><td class="pos">1.83</td></tr>
+      <tr><td>FCF (CFO+CFI)</td><td>101</td><td class="neg">−573</td><td class="neg">−57</td><td class="neg">−905</td><td class="neg">−505</td></tr>
+      <tr><td>Capex / sales %</td><td>3.9</td><td>10.8</td><td>10.1</td><td>21.6</td><td class="hi">30.4</td></tr>
+      <tr><td>BVPS ₹</td><td>62.10</td><td>100.64</td><td>110.95</td><td>131.93</td><td>172.51</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:8px">FY23 spike / FY24-25 fade is gas-sourcing <i>price pass-through</i>, not volume — judge this company on operating profit, which compounded 28%+ over the period. CFO/PAT printed &lt;0.75 in FY22, FY23, FY25 on total-PAT basis (🟡 below); on owners'-PAT basis it never breached 0.75 — the gap is cash retained inside the AVTL minority structure [data pack 'Cash_Flow'].</p>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card"><h3>Revenue + PAT vs OPM% — 5yr</h3><div class="chartbox"><canvas id="chAnnual"></canvas></div>
+      <p class="figtext">Revenue ₹4,631→8,333 Cr; PAT ₹385→1,107 Cr; OPM 11.5%→17.4%. Margin structurally re-rating as terminalling weight rises.</p></div>
+    <div class="card"><h3>Quarterly revenue &amp; PAT — 13 quarters <span class="lbl">[Reported]</span></h3><div class="chartbox"><canvas id="chQtr"></canvas></div>
+      <p class="figtext">Q4FY26: revenue ₹2,594 Cr (+52% YoY), PAT ₹455 Cr (+43%), OPM 24.1% — record, gas-division led. Q4 seasonally strongest (both FY25 &amp; FY26 Q4 OPM = 24%).</p></div>
+  </div>
+  <div class="grid2 sec">
+    <div class="card"><h3>OPM% &amp; RoCE% trend</h3><div class="chartbox"><canvas id="chMargins"></canvas></div>
+      <p class="figtext">OPM doubled since FY23 (7.8→17.4%). RoCE dipped to 12.5% in FY25 (CWIP-heavy) and recovered to 15.5% FY26 — watch this line as new terminals ramp from 20–25% starting utilisation.</p></div>
+    <div class="card"><h3>CFO vs PAT vs FCF — cash conversion</h3><div class="chartbox"><canvas id="chCash"></canvas></div>
+      <p class="figtext">FY26 CFO ₹2,028 Cr (1.83x PAT) is genuinely strong; FCF still −₹505 Cr because capex hit 30.4% of sales. Growth is capex-funded, not self-funding — by design, until FY28.</p></div>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>Balance-sheet highlights <span class="lbl">FY26 [Provisional] · FY25 [Reported AR p219]</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th>₹ Cr</th><th>FY25</th><th>FY26</th></tr>
+        <tr><td>Net worth (owners)</td><td>4,631</td><td>6,055</td></tr>
+        <tr><td>Borrowings ex-lease</td><td>2,884</td><td>≈2,417</td></tr>
+        <tr><td>— of which current (ST)</td><td>531</td><td class="hi">2,070</td></tr>
+        <tr><td>Lease liabilities (Ind AS 116)</td><td>1,722</td><td>1,734</td></tr>
+        <tr><td>Cash + bank</td><td>3,191</td><td>4,194</td></tr>
+        <tr><td>Investments (treasury)</td><td>0</td><td>1,745</td></tr>
+        <tr class="tot"><td>Net debt</td><td>positive</td><td class="pos">NEGATIVE (net cash)</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">🟡 FY26 current borrowings are ~86% of ex-lease debt — ST-funded; benign only while net-cash holds. CARE 2026 tightened the downgrade trigger to net-debt/PBILDT &gt;2.0x <span class="lbl">[CreditRating 2026 p1]</span>.</p>
+    </div>
+    <div class="card"><h3>Working-capital days <span class="lbl">[Reported · Screener]</span></h3><div class="chartbox short"><canvas id="chWC"></canvas></div>
+      <p class="figtext">Debtor days 21 (vs 37 FY25), inventory 6, CCC ~−12 days — a structurally short, customer-advance-funded cycle. No stuffing signature.</p></div>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>DuPont decomposition of RoE <span class="lbl">[Computed · consolidated incl NCI]</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th></th><th>FY22</th><th>FY23</th><th>FY24</th><th>FY25</th><th>FY26</th></tr>
+        <tr><td>Net margin %</td><td>8.3</td><td>5.9</td><td>9.5</td><td>11.6</td><td>13.3</td></tr>
+        <tr><td>Asset turnover (x)</td><td>1.17</td><td>1.22</td><td>0.89</td><td>0.61</td><td>0.58</td></tr>
+        <tr><td>Leverage (x)</td><td>1.82</td><td>2.00</td><td>2.04</td><td>2.39</td><td>2.39</td></tr>
+        <tr class="tot"><td>RoE % (consol.)</td><td>17.7</td><td>14.5</td><td>17.3</td><td>17.0</td><td>18.3</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">The RoE engine has flipped: asset turn halved (terminal assets landing) while margin doubled. Owners' RoE is lower (14.8%) because minorities own a slice of the best assets.</p>
+    </div>
+    <div class="card">
+      <h3>ROIC vs WACC — value spread</h3>
+      <div class="kvline"><span>RoCE FY26</span><span><b>15.5%</b> [Computed]</span></div>
+      <div class="kvline"><span>WACC (model, signed-off)</span><span><b>13.42%</b> [E · Inputs tab]</span></div>
+      <div class="kvline"><span>Spread</span><span class="up"><b>+2.1pp</b> — value created, thinly</span></div>
+      <div class="kvline"><span>Pre-build spread (FY22)</span><span>+3.0pp (RoCE 16.4%)</span></div>
+      <p class="note" style="margin-top:8px">A terminalling build-out runs RoCE below potential until utilisation ramps (7–10 yr curves guided). The bet is the spread widens toward +5–7pp as Pipavav/JNPA/Mangalore assets season; the risk is capex keeps landing faster than ramp. Value hinges on execution cadence, not current spread.</p>
+    </div>
+  </div>
+</section>
+<!-- ================= TAB 3 · ESTIMATES ================= -->
+<section class="panel" id="p-estimates">
+  <div class="sec">
+    <h2>Forward model — FY27e → FY29e <span class="sub">₹ Cr · [Own/Estimated] = signed-off DCF model 'Inputs' (09-Jun-26) · [Consensus] where available</span></h2>
+    <div class="tblwrap"><table>
+      <tr><th></th><th>FY26 (base)</th><th>FY27e Own</th><th>FY27e Cons.</th><th>FY28e Own</th><th>FY29e Own</th><th>Rev.</th></tr>
+      <tr><td>Revenue</td><td>8,333 [Prov]</td><td>9,333</td><td class="mut">n/a</td><td>10,453</td><td>11,498</td><td>■</td></tr>
+      <tr><td>EBITDA (reported basis)</td><td>1,452</td><td>1,680</td><td class="mut">n/a</td><td>1,986</td><td>2,300</td><td>■</td></tr>
+      <tr><td>EBITDA margin %</td><td>17.4</td><td>18.0</td><td class="mut">—</td><td>19.0</td><td>20.0</td><td>▲</td></tr>
+      <tr><td>EBIT [Computed: EBITDA − D&amp;A]</td><td>1,253</td><td>1,419</td><td class="mut">n/a</td><td>1,672</td><td>1,932</td><td>■</td></tr>
+      <tr><td>PAT (total)</td><td>1,107</td><td>1,170</td><td class="mut">n/a</td><td>1,349</td><td>1,522</td><td>■</td></tr>
+      <tr><td>PAT (owners, ~81% share)</td><td>898</td><td>947</td><td class="mut">n/a</td><td>1,093</td><td>1,232</td><td>■</td></tr>
+      <tr class="tot"><td>EPS ₹ (owners)</td><td>25.59</td><td><b>27.0</b></td><td><b>26.88</b> [Consensus]</td><td><b>31.1</b></td><td><b>35.1</b></td><td>▼</td></tr>
+      <tr><td>EPS growth %</td><td>+35.4</td><td>+5.5</td><td>+5.0</td><td>+15.2</td><td>+12.9</td><td></td></tr>
+    </table></div>
+    <p class="note" style="margin-top:8px">Own ≈ Consensus for FY27 (₹27.0 vs ₹26.88) — the soft year: FY26's ₹327 Cr other income (22.8% of PBT) and the 24%-OPM Q4 don't repeat, while the LPG sourcing shortfall drags Q1. FY28-29 [Estimated] consensus unavailable at clean consolidated level — flagged data gap. Revision direction: consensus 12M TP drifted from ~₹910 (early-2026 blogs) to ₹820–854 mean post-results → ▼ mild downward drift; FY27 margin direction ▲. <span class="lbl">[Consensus: marketscreener/investing.com, 5 analysts, range ₹620–1,010]</span></p>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>FY27e quarterly trajectory <span class="lbl">[Estimated — shortfall-then-normalise path]</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th>₹ Cr</th><th>Q1FY27e</th><th>Q2FY27e</th><th>Q3FY27e</th><th>Q4FY27e</th></tr>
+        <tr><td>Revenue</td><td>1,950</td><td>2,250</td><td>2,350</td><td>2,783</td></tr>
+        <tr><td>Op. profit</td><td>300</td><td>390</td><td>430</td><td>560</td></tr>
+        <tr><td>OPM %</td><td>15.4</td><td>17.3</td><td>18.3</td><td>20.1</td></tr>
+        <tr><td>EPS ₹ (owners)</td><td>4.6</td><td>6.2</td><td>6.7</td><td>9.5</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">Q1 carries the Middle-East LPG sourcing shortfall (50% Apr → 30% May; normalisation guided "by Q2") <span class="lbl">[Concall Q4FY26, 09-Jun-26]</span>. Q1FY27 print (~Aug-26) is the first thesis checkpoint.</p>
+      <div class="chartbox short"><canvas id="chFwdQ"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Assumption log — the yellow cells <span class="lbl">all [E] signed-off, DCF model 'Inputs' 09-Jun-26</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th>Driver</th><th>FY27e</th><th>FY28e</th><th>FY29e</th><th>Anchor</th></tr>
+        <tr><td>Revenue growth %</td><td>12.0</td><td>12.0</td><td>10.0</td><td>taper from FY22-26 path; vol-led</td></tr>
+        <tr><td>EBITDA margin %</td><td>18.0</td><td>19.0</td><td>20.0</td><td>mix → terminalling; FY26 17.4%</td></tr>
+        <tr><td>D&amp;A % of revenue</td><td>2.8</td><td>3.0</td><td>3.2</td><td>rising asset base</td></tr>
+        <tr><td>Effective tax %</td><td>23.0</td><td>23.0</td><td>24.0</td><td>FY24-26 actual 20–23%</td></tr>
+        <tr><td>Capex % of revenue</td><td>26.0</td><td>18.0</td><td>13.0</td><td>₹10,000 Cr gross → FY27 taper</td></tr>
+        <tr><td>WC days (receivable)</td><td>30</td><td>30</td><td>30</td><td>FY24-26 avg</td></tr>
+        <tr><td>Owners' share of PAT</td><td colspan="3">~81%</td><td>NCI ₹2,729 Cr post-AVTL [IP s14]</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">Tension to monitor: management guides 25% CAGR; the signed-off model deliberately runs 12/12/10% revenue — the gap is the variant view (see Thesis). If KGPL + ammonia land on time, assumptions migrate up, not down.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 4 · VALUATION ================= -->
+<section class="panel" id="p-valuation">
+  <div class="sec">
+    <h2>Where the multiple sits <span class="sub">own-history bands — no pure-play listed peer (flagged) · [Computed/Estimated]</span></h2>
+    <div class="grid3">
+      <div class="card"><h3>P/E (trailing)</h3>
+        <div class="kvline"><span>Current</span><span><b>29.54x</b></span></div>
+        <div class="kvline"><span>3-yr year-end avg</span><span>31.17x [Computed]</span></div>
+        <div class="kvline"><span>±1SD band</span><span>~24.00x / ~38.00x [Estimated]</span></div>
+        <div class="kvline"><span>Percentile</span><span><b>~45th</b> [Estimated] — slightly below own avg</span></div>
+        <div class="kvline"><span>Fwd P/E (FY27e)</span><span>28.1x on ₹26.88 [Consensus]</span></div>
+      </div>
+      <div class="card"><h3>EV/EBITDA — definitional dispute ⚑</h3>
+        <div class="kvline"><span>On norm. EBITDA ₹1,599 Cr</span><span><b>16.90x</b> [Estimated · data pack]</span></div>
+        <div class="kvline"><span>Web statutory</span><span>30.30x (stockanalysis) — CONFLICT, both shown</span></div>
+        <div class="kvline"><span>5-yr context</span><span>~12.00–18.00x norm. range [Estimated]</span></div>
+        <p class="note" style="margin-top:6px">Gap is definitional (mgmt normalised EBITDA vs statutory OP incl/excl other income), not a data error.</p>
+      </div>
+      <div class="card"><h3>P/B</h3>
+        <div class="kvline"><span>Current</span><span><b>4.38x</b> (BVPS ₹172.51)</span></div>
+        <div class="kvline"><span>3-yr avg</span><span>4.53x [Computed]</span></div>
+        <div class="kvline"><span>FY-end history</span><span>3.3x–6.1x (FY22–25)</span></div>
+        <div class="kvline"><span>Read</span><span>middle of own band</span></div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:8px">Re-rating narrative: market paid 20–25x for the trading-heavy Aegis of FY22-23; it now pays ~30x for an emerging terminal-annuity story. The de-rating from the Sep-25 peak (₹945) restored the multiple to just <i>below</i> its own 3-yr average — the froth is out, the premium is not.</p>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>DCF — FCFF, core business + AVTL stake (SOTP) <span class="lbl">[Estimated · signed-off model 09-Jun-26, AVTL marked to 10-Jun]</span></h3>
+      <div class="kvline"><span>Risk-free (10-yr G-Sec)</span><span><b>6.90%</b> [S · web 09-Jun-26; 6.95% on 05-Jun]</span></div>
+      <div class="kvline"><span>Beta (levered)</span><span><b>1.05</b> [E signed-off; web 1-yr 1.45, Yahoo 5-yr 0.65]</span></div>
+      <div class="kvline"><span>India ERP</span><span><b>7.0%</b> [E]</span></div>
+      <div class="kvline"><span>Cost of equity (CAPM)</span><span><b>14.25%</b></span></div>
+      <div class="kvline"><span>Pre/post-tax CoD</span><span>8.0% / 5.99% [S · AR FY25 7.25–8.75%]</span></div>
+      <div class="kvline"><span>Weights E/D</span><span>90 / 10 [E — net-cash, debt-light target]</span></div>
+      <div class="kvline"><span><b>WACC</b></span><span><b>13.42%</b></span></div>
+      <div class="kvline"><span>Terminal g</span><span><b>5.0%</b> ≤ India nominal GDP, conservative</span></div>
+      <div class="kvline"><span>Explicit FCFF FY27-31</span><span>−1,155 / −372 / +255 / +764 / +950 Cr</span></div>
+      <div class="kvline"><span>Core EV (Gordon)</span><span>₹11,262 Cr (PV explicit −165 + PV TV 11,427)</span></div>
+      <div class="kvline"><span>+ Core net cash − NCI</span><span>+869 − 2,729 Cr</span></div>
+      <div class="kvline"><span>+ AVTL 44.71% at market</span><span>₹9,596 Cr (mcap ₹21,462 Cr, 10-Jun) ⚑ model used 23,532 (09-Jun)</span></div>
+      <div class="kvline"><span><b>SOTP — Gordon</b></span><span><b>₹541 /sh</b> (−28% vs CMP)</span></div>
+      <div class="kvline"><span><b>SOTP — exit 13x EV/EBITDA</b></span><span><b>₹777 /sh</b> (+3%)</span></div>
+      <div class="kvline"><span><b>Midpoint</b></span><span><b>₹659 /sh</b> (−12.8%)</span></div>
+    </div>
+    <div class="card">
+      <h3>Reverse DCF — what ₹756 is pricing in <span class="lbl">[Computed]</span></h3>
+      <p class="note">Holding the signed-off margin path (18→21%), WACC 13.42% and g 5%, the CMP backs out to a <b>~21.8% revenue CAGR FY27-31</b> — versus the model's 12/12/10/9/8% and management's "25% CAGR" guidance. Equivalently: the market pays an implied <b>11.2x FY27e EBITDA for the core business</b> vs 6.7x from the Gordon DCF — i.e., the market already pays exit-multiple economics.</p>
+      <p class="note" style="margin-top:8px"><b>Translation:</b> at ₹756 you are underwriting near-full delivery of guidance (KGPL tie-in, ammonia ramp, distribution CAGR &gt;25%) with no slippage premium. Historical context: 4-yr EPS CAGR was 25.9%, so the ask is not absurd — but it has zero margin for the third-party-dependent pipeline catalysts that have already slipped repeatedly.</p>
+      <h3 style="margin-top:14px">Earnings sensitivity <span class="lbl">[Computed · FY28e base]</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th>Shock</th><th>Δ EBITDA</th><th>Δ EPS (owners)</th><th>Δ fair value @30x</th></tr>
+        <tr><td>±1% EBITDA margin</td><td>±₹105 Cr</td><td>±₹1.86</td><td><b>±₹56 /sh</b></td></tr>
+        <tr><td>±1% revenue growth</td><td>±₹20 Cr</td><td>±₹0.35</td><td>±₹11 /sh</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">This is a margin-mix story, not a topline story: 1pp of margin is worth 5x more than 1pp of growth. The ₹4,000→₹7,000/t distribution margin claim is the single most valuable line in the FY26 result — and the most mean-reversion-prone.</p>
+    </div>
+  </div>
+
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>Sensitivity — SOTP ₹/share · WACC × terminal g <span class="lbl">[Computed · Gordon, AVTL at 10-Jun market]</span></h3>
+      <div class="tblwrap"><table class="heat">
+        <tr><th>WACC \ g</th><th>4.0%</th><th>4.5%</th><th>5.0%</th><th>5.5%</th><th>6.0%</th></tr>
+        <tr><td>11.50%</td><td class="h3c">614</td><td class="h4c">643</td><td class="h4c">677</td><td class="h4c">716</td><td class="h5c">762</td></tr>
+        <tr><td>12.50%</td><td class="h2c">552</td><td class="h3c">573</td><td class="h3c">597</td><td class="h3c">625</td><td class="h4c">657</td></tr>
+        <tr><td>13.42%</td><td class="h2c">506</td><td class="h2c">523</td><td class="h2c basecell">541</td><td class="h2c">562</td><td class="h3c">586</td></tr>
+        <tr><td>14.50%</td><td class="h1c">463</td><td class="h1c">476</td><td class="h1c">490</td><td class="h2c">506</td><td class="h2c">524</td></tr>
+        <tr><td>15.50%</td><td class="h1c">431</td><td class="h1c">441</td><td class="h1c">453</td><td class="h1c">465</td><td class="h1c">479</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">Outlined cell = base case. The <i>entire</i> Gordon matrix sits below CMP ₹756 (max ₹762) — a 5-yr explicit window structurally undervalues 25–40-yr concession assets, which is why the exit-multiple leg (₹777) and the peer-anchored TP carry the weight. If you demand DCF-Gordon comfort, your price is ≤₹600.</p>
+    </div>
+    <div class="card">
+      <h3>Football field — fair-value triangulation <span class="lbl">₹/share</span></h3>
+      <div class="ff" id="ffield"></div>
+      <p class="figtext">DCF-Gordon ₹431–762 (pt ₹541) · SOTP exit-multiple 12–14x ₹734–820 (pt ₹777) · P/E 28–32x FY27e own EPS ₹27.0 → ₹756–864 (3-yr avg 31.2x → ₹842) · Consensus TP ₹620–1,010 (mean ₹837) · 52-wk ₹576–945. CMP ₹756 marked; 12M TP ₹855.</p>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Named-peer table <span class="sub">⚑ EXPLICIT FLAG: no listed pure-play LPG/liquid-terminalling peer on NSE; own subsidiary + closest gas-value-chain proxies used. O&amp;G majors not multiple-comparable.</span></h2>
+    <div class="tblwrap"><table>
+      <tr><th>Company</th><th>Mkt cap ₹Cr</th><th>P/E (TTM)</th><th>EV/EBITDA</th><th>P/B</th><th>RoCE %</th><th>OPM %</th><th>Note</th></tr>
+      <tr><td><b>AEGISLOG</b></td><td>26,546</td><td>29.54</td><td>16.90x norm ⚑</td><td>4.38</td><td>15.5</td><td>17.4</td><td>5-yr avg P/E ~27.00x [Est]</td></tr>
+      <tr><td>Aegis Vopak Terminals (subsidiary)</td><td>21,462</td><td class="hi">69.10 [HIGH]</td><td>~24.00 [Est]</td><td>4.98</td><td class="neg">7.3 [LOW]</td><td class="hi">74.2 [HIGH]</td><td>pure terminalling; [Reported · Screener 10-Jun]</td></tr>
+      <tr><td>GAIL</td><td>~1,04,000 [Est]</td><td class="neg">15.78 [LOW]</td><td>~9.00 [Est]</td><td>~1.60 [Est]</td><td>~15.0 [Est]</td><td>~11.0 [Est]</td><td>gas transmission/trading; [Reported P/E Yahoo 08-Jun]</td></tr>
+      <tr><td>Gujarat Gas</td><td>~31,000 [Est]</td><td>~24.00 [Est]</td><td>~13.00 [Est]</td><td>~3.50 [Est]</td><td>~18.0 [Est]</td><td>~13.0 [Est]</td><td>CGD proxy</td></tr>
+      <tr><td>Indraprastha Gas</td><td>~28,000 [Est]</td><td>~18.00 [Est]</td><td>~11.00 [Est]</td><td>~3.00 [Est]</td><td>~20.0 [Est]</td><td>~14.0 [Est]</td><td>CGD proxy</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:6px">Read-through: AEGISLOG trades between its commodity-ish proxies (~15–24x) and its own terminal pure-play (69x). The SOTP look-through is the honest frame: you are paying ~11x FY27e EBITDA for the core after marking AVTL at its (rich) market price. Peer cells marked [Est] are training-data anchored and should be refreshed from Screener before acting — flagged, not interpolated silently.</p>
+  </div>
+
+  <div class="sec">
+    <h2>Scenarios — CMP-anchored <span class="sub">CMP ₹756.00 · NSE · 10-Jun-2026 (web). Targets [Estimated], tied to band/SOTP triangulation.</span></h2>
+    <div class="scen">
+      <div class="sc bull"><h3>BULL · 18M</h3><div class="tp">₹965 <span class="pct up">+27.6%</span></div>
+        <p class="note">KGPL / Jamnagar-Loni tie-ins + ammonia + JNPA all commission on schedule; distribution sustains 30%+ CAGR; mix re-rates toward terminalling. ≈ consensus high band. EPS math: ~32x FY28e own EPS ₹31.1 ≈ ₹995; haircut to ₹965.</p>
+        <p class="note"><b>Execution gate:</b> upside &lt;40% so the hard gate isn't triggered, but the bull case still requires ≥2 confirmed catalysts before acting: (1) KGPL tie-in physically flowing, (2) Pipavav ammonia commissioned by Q1FY27.</p></div>
+      <div class="sc base"><h3>BASE · 12M</h3><div class="tp">₹855 <span class="pct up">+13.1%</span></div>
+        <p class="note">Owners' EPS compounds ~20% (FY27e soft, FY28e ₹31.1); P/E holds ~30x (3-yr avg 31.2x). ≈ consensus mean TP ₹820–854. Cross-check: SOTP exit-multiple ₹777 + 1 yr of compounding.</p></div>
+      <div class="sc bear"><h3>BEAR</h3><div class="tp">₹600 <span class="pct dn">−20.6%</span></div>
+        <p class="note">KGPL slips again + capex overrun/FCF drain + LPG sourcing-margin shock (Hormuz); de-rate to ~20x ≈ 52-wk low ₹576. DCF-Gordon floor zone ₹506–586 corroborates.</p></div>
+    </div>
+    <p class="note" style="margin-top:8px"><b>Risk/Reward = (965 − 756) / (756 − 600) = 1.34x.</b> Acceptable for ACCUMULATE-on-dips; a ₹700 entry lifts it to 2.65x — the disciplined add zone.</p>
+  </div>
+</section>
+<!-- ================= TAB 5 · BUSINESS ================= -->
+<section class="panel" id="p-business">
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>Model &amp; revenue streams</h3>
+      <p class="note"><b>Gas Terminal Division (GTD)</b> — ~90% of revenue at ~10% segment margin [AR FY25 · 'Segments']: LPG sourcing (Itochu JV), terminalling/throughput (take-or-pay), and distribution (packed/bulk/auto-LPG via 2,400+ distributor network). FY26 volumes: logistics 5,152 kMT (+14%), distribution 754 kMT (+45%), sourcing 607 kMT (+2%) — all records [IP Q4FY26 s11,s22]. Distribution margin stepped from ₹4,000 to ₹7,000/t, guided sustainable [Concall Q4FY26].</p>
+      <p class="note" style="margin-top:6px"><b>Liquid Terminal Division (LTD)</b> — ~10% of revenue at 62.2% margin [FY25]: chemical/POL tank farms across 6 ports. Stable revenue, EBITDA −5% in FY26 — the soft spot [Concall Q4FY26].</p>
+      <p class="note" style="margin-top:6px"><b>Structure:</b> terminal assets largely inside AVTL (44.71% held, listed, Royal Vopak partner, Itochu in HALPG); parent keeps sourcing/distribution + 44.71% look-through of terminals. NCI ₹2,729 Cr [IP s14].</p>
+    </div>
+    <div class="card">
+      <h3>Moat &amp; market position</h3>
+      <p class="note">Largest independent port-terminal network for LPG/liquids in India; ~a fifth of India's LPG imports touch Aegis infrastructure [Estimated — mgmt commentary]. Moat sources: (1) scarce waterfront real estate + 25-40yr port concessions; (2) Vopak's global operating standard (77 terminals, 23 countries); (3) switching costs via pipeline/jetty connectivity — KGPL and Jamnagar-Loni tie-ins deepen it; (4) first-mover in independent ammonia terminalling (Pipavav 36,202 MT — India's first) [Concall Q3FY26 p5]. Demand tailwind: LPG demand 5–7% CAGR, imports +8–10% (mgmt) [Concall Q1FY25 p13].</p>
+      <p class="note" style="margin-top:6px">Vulnerability: sourcing/distribution leg is margin-volatile and competes with PSU OMCs who are also customers — top GTD customer = 30% of gas revenue [FY25 'Segments'] 🟡.</p>
+    </div>
+  </div>
+  <div class="grid2 sec">
+    <div class="card">
+      <h3>Management, governance &amp; capital allocation</h3>
+      <p class="note"><b>Board/KMP:</b> Raj Chandaria (CMD), Murad Moledina (CFO); promoter group (Chandaria family vehicles incl. Huron Holdings) 58.10%, zero pledge [AR FY25; no-encumbrance filing 07-Apr-26]. KMP remuneration ₹7 Cr (RKC) — modest vs PAT [AR FY25 RPT note].</p>
+      <p class="note" style="margin-top:6px"><b>Where the cash went (FY22→FY26):</b> capex ₹~6,000 Cr cumulative (terminals; CWIP peaked ₹1,308 Cr FY25); dividends ~25–44% payout (FY26 ₹8.70/sh, ~34%); zero buybacks; M&A/restructuring via AVTL — HALPG 75% sold to AVTL (₹180 Cr gain FY25, balance FY26), J2/JNPA greenfield to be built then sold to AVTL [Events Oct-25→Feb-26]. Debt: raised through FY25 (D/E 0.99) then IPO proceeds flipped parent to net cash.</p>
+      <p class="note" style="margin-top:6px"><b>Pattern:</b> disciplined on pledge/payout, aggressive on structure — value migrates between parent and JV via RPTs. Shareholder-ratified (postal ballot 01-Dec-25) but demands standing scrutiny 🟡.</p>
+    </div>
+    <div class="card">
+      <h3>Industry context &amp; capacity footprint</h3>
+      <p class="note">India is structurally short LPG (imports ~60%+ of consumption) and storage-starved; PM Ujjwala keeps demand compounding. Static storage scarcity = pricing power for incumbents at berth-connected sites. [ValuePickr/industry commentary; mgmt]</p>
+      <p class="note" style="margin-top:6px"><b>Build-out:</b> Mangalore 82,000 MT cryo LPG (commissioned Jun-25) + 194,382 cbm liquid; Pipavav 70,800 MT LPG + 116,620 cbm liquid + ammonia 36,202 MT (before Q1FY27); JNPA 'J2' greenfield 77,286 MT LPG + 318,100 cbm liquid + 35k MTPA bottling; Mumbai +61,000 KL (H1FY27); CRL-4 94,148 cbm (FY27) [Concall Q2/Q3FY26; IP Q4FY26 s9; Event 05-Nov-25]. New terminals start at 20–25% utilisation, ramp 7–10 yrs [Concall Q1FY25 p8].</p>
+      <p class="note" style="margin-top:6px">Capex: ₹10,000 Cr gross / $1.2bn by Mar-27, +₹5,000 Cr by Mar-28, "$5bn road-map to 2030" [Concall Q3FY26 p8; Q4FY26]. Funding: AVTL Phase-II equity (SEBI-mandated within 3 yrs of IPO) + debt headroom.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 6 · CONCALL ================= -->
+<section class="panel" id="p-concall">
+  <div class="sec">
+    <h2>Q4 FY26 earnings call — 09-Jun-2026 <span class="sub">CMD Raj Chandaria · CFO Murad Moledina · [Provisional] transcript via GuruFocus; PPT 30-May-26 BSE</span></h2>
+    <div class="quote">"The margin improved from Rs 4,000 to Rs 7,000 due to rising energy prices. We expect these margins to be sustainable as distribution volumes scale up, bringing procurement efficiencies."<span class="who">— CFO, on the gas-distribution margin step-change (the single most valuable claim of FY26)</span></div>
+    <div class="grid2">
+      <div class="card"><h3>Thematic commentary</h3>
+        <p class="note"><b>Strategy:</b> aggregate capex $1.2bn by Mar-27 + ₹5,000 Cr by Mar-28, organic + inorganic; southern expansion (Mangalore, Kochi) drives distribution toward 2 MMT by FY28 incl. ammonia.</p>
+        <p class="note"><b>Margins:</b> ₹7,000/t distribution sustainable (procurement scale); ammonia throughput ₹2,500–3,000/t, distribution up to ₹5,000/t.</p>
+        <p class="note"><b>Demand/supply:</b> Middle-East disruption cut LPG sourcing ~50% in Apr → ~30% in May; normalisation expected by Q2 with alternative supply sources.</p>
+        <p class="note"><b>Capex/funding:</b> $5bn through 2030 ambition; AVTL Phase-II equity pending.</p></div>
+      <div class="card"><h3>Key Q&amp;A</h3>
+        <p class="note"><b>Q:</b> Gas profitability sustainable? <b>A:</b> Yes — volume scale + procurement efficiency; margin step is structural, not windfall (CFO).</p>
+        <p class="note"><b>Q:</b> LPG volume normalisation? <b>A:</b> Shortfall 50%→30% Apr→May; normal by Q2; reducing Middle-East dependency (CFO).</p>
+        <p class="note"><b>Q:</b> Southern ops impact? <b>A:</b> Mangalore + Kochi → 2 MMT distribution by FY28 incl. ammonia (CFO).</p>
+        <p class="note"><b>Q:</b> Ammonia economics? <b>A:</b> 25% yr-1 utilisation, +30-40%/yr; distribution starts 200 kMT, +20-30%/yr (CFO).</p></div>
+    </div>
+  </div>
+  <div class="grid2 sec">
+    <div class="card"><h3>Hidden signals — signal → interpretation</h3>
+      <p class="note">① "Normalized EBITDA ₹1,599 Cr" emphasised over statutory ₹1,452 Cr → recurring one-off adjustments; reconcile every quarter before accepting the growth rate.</p>
+      <p class="note">② Guidance framed at "25% CAGR" after delivering 36% → either sandbagging or a hedge against distribution-margin mean reversion. In Q1FY26 mgmt had already narrowed "the only guidance" to EPS CAGR and disowned throughput guidance ("I have never said 20% growth in throughput") [Concall Q1FY26 p8,13] → moving goalposts; monitor.</p>
+      <p class="note">③ Q4 interest cost ₹63 Cr (vs ₹26 Cr Q3) while gross borrowings fell → borrowing-cost capitalisation ending as assets commission; P&amp;L interest will step up from here.</p>
+      <p class="note">④ Dividend payout cut to ~34% (42% FY25) despite record PAT → cash husbanded for capex; payout ratio is the tell on internal capex confidence.</p>
+      <p class="note">⑤ DII −1.74pp in Mar-26 quarter while FII +1.69pp → domestic funds sold the de-rating, foreigners bought it [Screener SHP].</p></div>
+    <div class="card"><h3>Guidance tracker <span class="lbl">[from transcripts · memo §5]</span></h3>
+      <div class="tblwrap"><table>
+        <tr><th>Metric</th><th>Guided</th><th>Actual</th><th>Status</th></tr>
+        <tr><td>EPS CAGR FY22-27</td><td>25%</td><td>25.9% (4-yr)</td><td class="pos">MET</td></tr>
+        <tr><td>Distribution vol growth</td><td>25–30% p.a.</td><td>+45% FY26</td><td class="pos">BEAT</td></tr>
+        <tr><td>LPG throughput growth</td><td>~25%</td><td>+14% FY26</td><td class="neg">MISS</td></tr>
+        <tr><td>Mangalore cryo LPG</td><td>end-FY25</td><td>Jun-2025</td><td>MET (slip)</td></tr>
+        <tr><td>Pipavav ammonia</td><td>by Q1FY27</td><td>on track</td><td>PENDING</td></tr>
+        <tr><td>KGPL pipeline tie-in</td><td>Dec-24→Jun-26</td><td>slipped repeatedly</td><td class="neg">MISS</td></tr>
+        <tr><td>Capex envelope</td><td>₹4,500 Cr by FY27</td><td>re-scoped to ₹10,000 Cr</td><td class="hi">RAISED</td></tr>
+        <tr class="tot"><td>Hit-rate (datable items)</td><td colspan="2">≈65%</td><td class="hi">🟡 &lt;70%</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">The financial promise is kept; the physical-infrastructure promises slip — mostly on third parties (IHB/govt pipeline). Price the catalysts with a lag.</p></div>
+  </div>
+</section>
+
+<!-- ================= TAB 7 · GROWTH & CATALYSTS ================= -->
+<section class="panel" id="p-growth">
+  <div class="sec"><h2>Growth triggers</h2>
+    <div class="grid3">
+      <div class="card"><h3>Distribution scale-up → 2 MMT</h3><p class="note"><b>Thesis:</b> 754 kMT (FY26) → 2,000 kMT by FY28 incl. ammonia; margin ₹7,000/t guided sustainable. <b>Quantum:</b> +₹600–800 Cr incremental EBITDA potential [Estimated: Δvol × ₹6,000–7,000/t]. <b>Timeline:</b> FY27–28. <b>Conviction: HIGH</b> — beat guidance 2 yrs running.</p></div>
+      <div class="card"><h3>Ammonia terminalling (first mover)</h3><p class="note"><b>Thesis:</b> Pipavav 36,202 MT — India's first independent ammonia terminal; throughput ₹2,500–3,000/t, distribution to ₹5,000/t; 200 kMT yr-1. <b>Quantum:</b> +₹60–100 Cr EBITDA yr-1 [Estimated: mgmt util/margin guidance], compounding 30-40%. <b>Timeline:</b> commissioning before Q1FY27. <b>Conviction: MEDIUM</b> — new market, no Indian precedent.</p></div>
+      <div class="card"><h3>KGPL / Jamnagar-Loni pipeline tie-ins</h3><p class="note"><b>Thesis:</b> unlocks Pipavav/Kandla LPG throughput at near-zero incremental capex. <b>Quantum:</b> throughput growth re-accelerates toward 20%+. <b>Timeline:</b> "by Jun-2026", slipped serially. <b>Conviction: OPTIONALITY</b> — third-party (IHB/govt) dependency; do not pay for it, collect it.</p></div>
+    </div>
+  </div>
+  <div class="sec"><h2>Dated catalyst calendar</h2>
+    <div class="grid2">
+      <div class="card"><h3>0–6 months (to ~Dec-2026)</h3>
+        <div class="kvline"><span>KGPL + Jamnagar-Loni tie-ins ("a month away", Jan-26)</span><span class="up">+ · HIGH magnitude</span></div>
+        <div class="kvline"><span>Pipavav ammonia commissioning (≤Q1FY27)</span><span class="up">+ · MED-HIGH</span></div>
+        <div class="kvline"><span>JNPA first liquid phase, ₹1,675 Cr (Q1FY27)</span><span class="up">+ · MED</span></div>
+        <div class="kvline"><span>Mumbai +61,000 KL liquid (H1FY27)</span><span class="up">+ · LOW-MED</span></div>
+        <div class="kvline"><span>Q1FY27 results ~Aug-26 — shortfall quarter</span><span class="dn">± · sourcing normalisation test</span></div>
+        <div class="kvline"><span>AGM / FY26 AR publication — fills ESOP/contingency gaps</span><span>± · info</span></div>
+      </div>
+      <div class="card"><h3>6–18 months (Dec-26 → Dec-27)</h3>
+        <div class="kvline"><span>J2 (JNPA) capacities through Dec-2026 → AVTL acquisition</span><span class="up">+ · HIGH</span></div>
+        <div class="kvline"><span>CRL-4 liquid terminal 94,148 cbm (FY27)</span><span class="up">+ · MED</span></div>
+        <div class="kvline"><span>Distribution run-rate toward 2 MMT (FY28 target)</span><span class="up">+ · HIGH</span></div>
+        <div class="kvline"><span>AVTL Phase-II equity raise (SEBI window ≤Jun-28)</span><span class="dn">± · funding/dilution at JV level</span></div>
+        <div class="kvline"><span>New-terminal utilisation ramp 20–25% → 40%+</span><span class="up">+ · structural</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="grid2 sec">
+    <div class="card"><h3>Segment / volume mix <span class="lbl">[Reported · IP Q4FY26 s22, AR 'Segments']</span></h3><div class="chartbox"><canvas id="chSeg"></canvas></div>
+      <p class="figtext">LPG volumes kMT — Logistics 4,523→5,152 (+14%), Distribution 521→754 (+45%), Sourcing 597→607 (+2%). Revenue mix FY25: Gas 90.4% (margin 10.0%) / Liquid 9.6% (margin 62.2%). The margin engine and the revenue engine are different divisions.</p></div>
+    <div class="card"><h3>What compounds, when</h3>
+      <p class="note"><b>FY27:</b> soft EPS year (+5%e) — other-income base effect + Q1 shortfall, masked underneath by terminal commissioning. <b>FY28:</b> the payoff year — distribution 2 MMT target, ammonia yr-2, JNPA/CRL-4 contributing, capex/sales falls to ~18% and FCF turns. <b>FY29+:</b> utilisation-ramp annuity. The market will price FY28 by mid-CY27 — position before the catalyst cluster confirms, add on each physical commissioning, not on price momentum.</p></div>
+  </div>
+</section>
+
+<!-- ================= TAB 8 · OWNERSHIP ================= -->
+<section class="panel" id="p-ownership">
+  <div class="grid32 sec">
+    <div class="card"><h3>Shareholding trend — 8 quarters <span class="lbl">[Reported · Screener SHP, Mar-26 = current]</span></h3><div class="chartbox"><canvas id="chSHP"></canvas></div>
+      <p class="figtext">Promoter frozen at 58.10% for 12 straight quarters; pledge NIL throughout. Mar-26: FII 19.56% (record high, +1.69pp QoQ), DII 3.67% (−1.74pp), Public 18.67%.</p></div>
+    <div class="card"><h3>SHP table</h3>
+      <div class="tblwrap"><table>
+        <tr><th>%</th><th>Jun-24</th><th>Sep-24</th><th>Dec-24</th><th>Mar-25</th><th>Jun-25</th><th>Sep-25</th><th>Dec-25</th><th>Mar-26</th></tr>
+        <tr><td>Promoter</td><td>58.10</td><td>58.10</td><td>58.10</td><td>58.10</td><td>58.10</td><td>58.10</td><td>58.10</td><td>58.10</td></tr>
+        <tr><td>FII</td><td>17.65</td><td>17.93</td><td>18.22</td><td>18.06</td><td>16.79</td><td>16.88</td><td>17.87</td><td class="hi">19.56</td></tr>
+        <tr><td>DII</td><td>6.71</td><td>6.68</td><td>6.69</td><td>6.31</td><td>6.40</td><td>6.25</td><td>5.41</td><td class="neg">3.67</td></tr>
+        <tr><td>Public</td><td>17.55</td><td>17.29</td><td>16.99</td><td>17.52</td><td>18.71</td><td>18.76</td><td>18.64</td><td>18.67</td></tr>
+        <tr><td>Pledge</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      </table></div>
+      <p class="note" style="margin-top:6px">⚑ Conflict: AR FY25 shows FPI 18.69%/DII 6.23%; one web source shows DII 0.28% (classification artefact). Screener Mar-26 used as current; sources differ — shown, not resolved.</p></div>
+  </div>
+  <div class="grid2 sec">
+    <div class="card"><h3>Institutional holders &amp; flows</h3>
+      <p class="note">Protocol read: FII at a record 19.56% into a falling price = smart-money accumulation signal 🟢; DII −1.74pp QoQ = domestic profit-booking 🟡 (escalation trigger: both cohorts selling simultaneously for 2 quarters → 🔴).</p>
+      <p class="note" style="margin-top:6px">Fund-wise holders: <b>Data unavailable — top MF/institution names | Trendlyne/AR FY26 | Mar-26</b> (AR FY26 not yet published; not interpolated). Shareholder count 78,190 (Mar-26) vs 86,749 (Mar-25) — retail churned out during the drawdown.</p></div>
+    <div class="card"><h3>Insider, bulk/block &amp; SAST — 90 days</h3>
+      <p class="note">No bulk/block deals or insider sales &gt;2% found in the last 90 days [web; BSE]. 29-Sep-25 SEBI Reg-29: inter-se promoter transfer of 10,000 sh (immaterial, off-market). 25-Feb-26: BSE volume-movement surveillance query — company replied "no UPSI", move market-driven [Event 25-Feb-26]. 07-Apr-26: Huron Holdings (promoter vehicle) no-encumbrance declaration — pledge NIL re-confirmed 🟢. SAST/creeping: none — promoter static at 58.10%.</p></div>
+  </div>
+</section>
+<!-- ================= TAB 9 · RISKS & QUALITY ================= -->
+<section class="panel" id="p-risks">
+  <div class="card" style="border-left:4px solid var(--yellow);margin-bottom:18px">
+    <h3 style="color:var(--ink)">Flag verdict — read this first</h3>
+    <p class="note" style="font-size:13.5px"><b>No 🔴 thesis-breaking flag is open.</b> The severest live item is 🟡 <b>guidance hit-rate ≈65%</b> (&lt;70% threshold) — driven by the serially-slipping, third-party-dependent KGPL pipeline tie-in — compounded by two structural ambers: the <b>NCI wedge</b> (minorities now take ~19% of PAT and rising) and <b>other income at 22.8% of PBT</b>. Escalation to 🔴 if: promoter pledge &gt;0 at any reading; CFO/PAT &lt;0.75 on BOTH total and owners' basis in FY27; GST contingency &gt;₹150 Cr; or RPTs outside the ratified AVTL/Vopak perimeter.</p>
+  </div>
+  <div class="sec">
+    <h2>14-point analysis protocol <span class="sub">🔴 thesis-breaking · 🟡 monitor (trigger stated) · 🟢 immaterial — sources: AR FY25 [AR-Validated], IP Q4FY26, events, web</span></h2>
+    <div>
+      <span class="chip g">1 Promoter 58.10% · pledge NIL 🟢</span>
+      <span class="chip g">2 FII 19.56% record / DII trim — not both exiting 🟢</span>
+      <span class="chip y">3 CFO/PAT &lt;0.75 in FY22·23·25 (total basis) 🟡 — owners' basis never breached; FY26 1.83</span>
+      <span class="chip g">4 WC days 27 vs 47 — improving 🟢</span>
+      <span class="chip y">5 D/E 0.69 &gt;0.5 → split shown: ST ₹2,070 Cr = 86% of ex-lease debt 🟡 (net-cash mitigant)</span>
+      <span class="chip y">6 Contingent ₹225 Cr: SC air-pollution ₹142 + GST ₹77 (2x YoY) 🟡</span>
+      <span class="chip g">7 Auditor clean FY24-25; no fraud; CARO clean 🟢</span>
+      <span class="chip y">8 RPT 3.2% of revenue FY25 — Vopak loan ₹400 Cr, HALPG transfers 🟡 (ratified)</span>
+      <span class="chip g">9 No accounting-policy change &gt;5% PAT 🟢</span>
+      <span class="chip y">10 Guidance hit-rate ≈65% &lt;70% 🟡 — KGPL the serial offender</span>
+      <span class="chip g">11 Insider/bulk 90d: nothing &gt;2% 🟢</span>
+      <span class="chip y">12 ESOP % — Data unavailable | AR FY26 pending 🟡</span>
+      <span class="chip g">13 CCC ~−12 days, structurally short 🟢</span>
+      <span class="chip y">14 2 subsidiaries net-worth erosion (CARO) — immaterial vs consol 🟡</span>
+    </div>
+    <p class="note" style="margin-top:8px">Zero hard-stop reds. Escalation triggers: pledge &gt;0 at any reading; CFO/PAT(total) &lt;0.75 again in FY27 with owners'-basis also &lt;0.75; GST contingency crossing ₹150 Cr or ~25% of net worth; RPT to entities outside the ratified AVTL/Vopak perimeter.</p>
+  </div>
+
+  <div class="sec">
+    <h2>Forensic / earnings-quality screen</h2>
+    <div class="tblwrap"><table>
+      <tr><th>Test</th><th>Reading</th><th>Flag</th></tr>
+      <tr><td>Accruals ratio (PAT−CFO)/avg assets</td><td>FY26 <b>−7.2%</b> [Computed] — cash exceeds book profit</td><td>🟢</td></tr>
+      <tr><td>CFO/EBITDA</td><td>FY26 1.27x norm. (FY25 0.51x — capex-cycle trough)</td><td>🟢/🟡</td></tr>
+      <tr><td>Capitalised vs expensed costs</td><td>Screener machine-flags possible interest capitalisation (AEGISLOG &amp; AVTL); Q4 interest step-up as capitalisation ends; standard for infra but inflates build-phase PAT</td><td>🟡</td></tr>
+      <tr><td>Depreciation rate</td><td>~3.1% of net block [Computed] — consistent with 25-40yr terminal lives; KAM = asset useful-lives [AR FY25 p109]</td><td>🟢</td></tr>
+      <tr><td>Receivable/inventory ageing</td><td>Debtors 21d, inventory 6d, falling — no stuffing</td><td>🟢</td></tr>
+      <tr><td>Auditor tenure / fees</td><td>Clean opinions FY24-25; no resignation; fee trend: Data unavailable — audit fees | AR FY26 | FY26</td><td>🟢</td></tr>
+      <tr><td>Promoter remuneration % of PAT</td><td>KMP (RKC) ₹7 Cr ≈ 0.7% of owners' PAT — modest</td><td>🟢</td></tr>
+      <tr><td>Restatement / late filings</td><td>None on record; results on calendar</td><td>🟢</td></tr>
+      <tr><td>Other-income reliance</td><td>₹327 Cr = <b>22.8% of PBT</b> (treasury + stake-sale gains) — flatters PAT quality</td><td>🟡</td></tr>
+      <tr><td>Owners-vs-total PAT wedge</td><td>NCI ₹208 Cr FY26; owners +35% vs headline +41% — structural leakage, growing</td><td>🟡</td></tr>
+    </table></div>
+    <p class="note" style="margin-top:6px">Verdict [memo §6]: no fraud markers; caveats are <i>structural</i> (minority claim, one-off income, mix shift toward low-margin sourcing), not manipulative. Normalised EPS ₹32.22 vs reported ₹25.59 — difference is tax-normalisation, not add-backs.</p>
+  </div>
+
+  <div class="grid2 sec">
+    <div>
+      <h2 style="font-size:18px;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:12px">Detailed risk cards</h2>
+      <div class="riskcard"><b>HIGH — Capex execution &amp; funding intensity.</b> Capex/sales 30.4%; FCF negative every recent year; ₹10,000 Cr gross to FY27 leans on AVTL Phase-II equity + debt. Overrun/slippage compounds directly into the reverse-DCF gap. <div class="src">['Cash_Flow' · Concall Q3FY26 p8 · CARE 2026]</div></div>
+      <div class="riskcard"><b>HIGH — Earnings structure.</b> NCI ₹2,729 Cr and rising; mix tilting to ~10%-margin gas sourcing; other income 22.8% of PBT. Headline P/E (29.5x) understates the true price of owners' core earnings. <div class="src">['Annual_PL' · IP Q4FY26 s9,s14]</div></div>
+      <div class="riskcard"><b>HIGH — LPG sourcing / geopolitical.</b> Strait-of-Hormuz exposure: Apr-26 sourcing −50%; CARE 2026 explicitly flags it. Distribution margin (₹7,000/t) is energy-price-linked and mean-reversion-prone. <div class="src">[CARE 2026 p1 · Concall Q4FY26]</div></div>
+      <div class="riskcard med"><b>MED — KGPL serial slippage</b> (IHB/govt dependency) delays Pipavav/Kandla ramp. <div class="src">[Q1FY25 p9 → Q3FY26 p4]</div></div>
+      <div class="riskcard med"><b>MED — Customer concentration:</b> top GTD customer 30% of gas revenue. <div class="src">['Segments' FY25]</div></div>
+      <div class="riskcard med"><b>MED — RPT complexity:</b> ongoing AVTL/Vopak asset transfers; Vopak loan ₹400 Cr. <div class="src">['AR_Validated' · events]</div></div>
+      <div class="riskcard med"><b>MED — ST-borrowing reliance:</b> ₹2,070 Cr current (~86% of ex-lease debt). <div class="src">[IP Q4FY26 s14]</div></div>
+      <div class="riskcard med"><b>MED — Valuation:</b> ~30x P/E; whole DCF-Gordon matrix below CMP; AVTL at 69x P/E props the SOTP. <div class="src">[Valuation tab]</div></div>
+      <div class="riskcard low"><b>LOW —</b> 2 subsidiaries net-worth erosion (immaterial); beta 1.45 volatility. <div class="src">['AR_Validated' · web]</div></div>
+    </div>
+    <div>
+      <h2 style="font-size:18px;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:12px">Financial-health strip &amp; the market's blind spots</h2>
+      <div class="card" style="margin-bottom:12px">
+        <div class="kvline"><span>CFO/PAT (FY26 / 5-yr pattern)</span><span><b>1.83x</b> / 3 misses on total basis 🟡</span></div>
+        <div class="kvline"><span>Debt trajectory</span><span>D/E 0.99 → 0.69; <b>net cash</b> post-IPO 🟢</span></div>
+        <div class="kvline"><span>Receivables</span><span>21 days, improving 🟢</span></div>
+        <div class="kvline"><span>Interest cover (FY26)</span><span>~10.8x EBIT/interest [Computed] 🟢</span></div>
+      </div>
+      <div class="card">
+        <h3>What the market may be ignoring</h3>
+        <p class="note"><b>Bearish neglect:</b> consensus models the parent on consolidated headline PAT — almost nobody haircuts for the NCI wedge growing faster than owners' profit, nor for P&amp;L interest stepping up as capitalisation ends. FY27 consensus EPS ₹26.88 implies +5% — the "soft FY27" is in numbers but arguably not yet in the multiple.</p>
+        <p class="note" style="margin-top:6px"><b>Bullish neglect:</b> if the ₹7,000/t distribution margin is even half-sticky, distribution alone adds ~₹400–600 Cr EBITDA by FY28 on volumes already 45% ahead — without any pipeline catalyst. The market prices KGPL at zero (correctly) but may also be pricing ammonia first-mover optionality at zero (incorrectly). And a parent holding 44.71% of a listed 69x-P/E terminal platform has an embedded re-rating kicker if AVTL executes Phase-II without dilution pain.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= TAB 10 · THESIS ================= -->
+<section class="panel" id="p-thesis">
+  <div class="sec">
+    <h2>Verdict</h2>
+    <p style="font-size:16px"><b>ACCUMULATE at ₹756</b> (NSE, 10-Jun-2026) · 12M TP <b>₹855</b> (+13.1%) · R/R 1.34x — <i>India's LPG-infrastructure toll road compounding owners' EPS ~20%, bought at the price of full execution; add on weakness toward ₹700, not on strength.</i></p>
+  </div>
+  <div class="sec">
+    <h2>Variant perception</h2>
+    <div class="vp">
+      <div class="card"><h3>Consensus view</h3><p class="note">"Record FY26, 25% guided CAGR, net-cash parent, buy the infra build-out" — 4 buys / 0 sells, mean TP ₹820–854 [Consensus]. Values the consolidated P&amp;L at ~30x and treats normalized EBITDA as the run-rate.</p></div>
+      <div class="card"><h3>Our variant view</h3><p class="note">Owners' economics lag the headline: NCI takes a growing fifth of profit; other income is 23% of PBT; FY27 is a +5% EPS year. The stock is a <b>two-speed SOTP</b> — a rich listed terminal JV (69x) plus a volatile sourcing engine — worth ₹777 on exit-multiples, ₹541 on Gordon. Pay for distribution-margin stickiness; take pipeline catalysts for free.</p></div>
+      <div class="card"><h3>What must be true (for TP)</h3><p class="note">① Distribution margin holds ≥₹6,000/t as volumes scale to 2 MMT; ② sourcing normalises by Q2FY27 as guided; ③ Pipavav ammonia commissions ≤Q1FY27 and ramps to plan; ④ capex stays inside ₹10,000 Cr without parent-level dilution; ⑤ AVTL multiple doesn't halve.</p></div>
+      <div class="card"><h3>What proves us wrong</h3><p class="note"><b>Bull-wrong:</b> distribution margin reverts to ₹4,000/t → FY28e EPS ~₹27, stock ₹540–600. <b>Bear-wrong:</b> KGPL flows + ammonia beats + 30% distribution CAGR → EPS path ₹31/38+, stock through ₹965. First tell: Q1FY27 gas-division EBITDA print (~Aug-26).</p></div>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>Thesis-monitoring checklist</h2>
+    <div class="tblwrap"><table>
+      <tr><th>Item</th><th>Current reading</th><th>Source</th></tr>
+      <tr><td>LPG sourcing shortfall</td><td>−30% (May-26), normal "by Q2FY27"</td><td>Concall Q4FY26</td></tr>
+      <tr><td>Distribution margin /t</td><td>₹7,000 — guided sustainable</td><td>Concall Q4FY26</td></tr>
+      <tr><td>Distribution volume run-rate</td><td>754 kMT FY26 → 2 MMT FY28 target</td><td>IP s22 · concall</td></tr>
+      <tr><td>KGPL tie-in</td><td>Not flowing; "month away" since Jan-26</td><td>Q3FY26 p4</td></tr>
+      <tr><td>Pipavav ammonia</td><td>On track ≤Q1FY27</td><td>Q3FY26 p5</td></tr>
+      <tr><td>NCI share of PAT</td><td>18.8% FY26 (₹208/1,107 Cr) — rising</td><td>'Annual_PL'</td></tr>
+      <tr><td>Promoter pledge</td><td>NIL (07-Apr-26 declaration)</td><td>web · Reg-29</td></tr>
+      <tr><td>Net cash status</td><td>Net-debt-negative (CARE trigger: ND/PBILDT &gt;2x)</td><td>CARE 2026 p1</td></tr>
+      <tr><td>AVTL market cap (SOTP leg)</td><td>₹21,462 Cr (10-Jun-26)</td><td>Screener</td></tr>
+    </table></div>
+  </div>
+  <div class="sec">
+    <h2>Scenario cards &amp; the simple-investor summary</h2>
+    <div class="scen">
+      <div class="sc bull"><h3>Bull ₹965 · +27.6% · 18M</h3><p class="note">~32x FY28e EPS ₹31.1 (haircut). Needs KGPL + ammonia confirmed — 2-catalyst gate before chasing.</p></div>
+      <div class="sc base"><h3>Base ₹855 · +13.1% · 12M</h3><p class="note">~30x blended FY27/28e owners' EPS; equals consensus mean; SOTP-exit ₹777 + a year of compounding.</p></div>
+      <div class="sc bear"><h3>Bear ₹600 · −20.6%</h3><p class="note">20x de-rate on FY27e ₹27 + sourcing shock; 52-wk low ₹576 and DCF-Gordon zone corroborate.</p></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Simple investor summary</h3>
+      <p class="note"><b>One line:</b> you own India's LPG import infrastructure plus a fast-growing gas-retailing arm, run by a zero-pledge promoter with a net-cash balance sheet — but you're paying a price that assumes the next two years go right.<br>
+      <b>Best case:</b> pipelines connect, ammonia works, margins stick → ₹965+ inside 18 months.<br>
+      <b>Worst case:</b> a Gulf supply shock plus another pipeline delay → ₹600, and you wait an extra year.<br>
+      <b>Key watchpoint:</b> Q1FY27 results (~Aug-2026) — did sourcing normalise and did the ₹7,000/t distribution margin survive?</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>Methodology &amp; sources.</b> Financials: data pack 'AEGISLOG_DataPack_clean.xlsx' (AR-validated, FY22-25 [Reported], FY26 [Provisional] — FY26 AR unpublished); AR FY25 (pages cited inline); IP Q4FY26; concall transcripts Q1FY25–Q4FY26 (Q4 call 09-Jun-2026 via GuruFocus [Provisional]); CARE rating reports 2025/2026; corporate-event filings Sep-25→Feb-26; Screener.in (10-Jun-2026) for CMP/SHP/peers; consensus from marketscreener/investing.com (~5 analysts). DCF: signed-off model 'AEGISLOG_DCF_Model_090626.xlsx' — Rf 6.9% (10-yr G-Sec), β 1.05 [E], ERP 7%, WACC 13.42%, g 5%, AVTL stake marked to ₹21,462 Cr (10-Jun). All [Estimated] cells carry stated bases; conflicts (CMP, EV/EBITDA, FII/DII, AVTL mcap, beta) shown unresolved. Known gaps: ESOP %, FY26 segment EBITDA full-year, fund-wise holders, FY26 contingencies — flagged, not interpolated. Scale: ₹ Cr throughout; per-share ₹ absolute. <b>This dashboard is a research aid, not investment advice; targets are illustrative estimates.</b> Prepared 10-Jun-2026 · AEGISLOG_Dashboard_100626 · v1
+</footer>
+</div><!-- /wrap -->
+<script>
+/* ---------- theme & tabs (JS state only; no storage APIs) ---------- */
+var themeNow='dark';
+function flipTheme(){
+  themeNow = themeNow==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',themeNow);
+  document.getElementById('themeBtn').textContent = themeNow==='dark'?'☀ Light':'☾ Dark';
+  buildCharts();
+}
+document.querySelectorAll('#tabbar button').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelectorAll('#tabbar button').forEach(function(x){x.classList.remove('on')});
+    document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on')});
+    b.classList.add('on');
+    document.getElementById('p-'+b.dataset.t).classList.add('on');
+    window.scrollTo({top:0});
+  });
+});
+/* ---------- palette helpers ---------- */
+function pal(){
+  var dark = themeNow==='dark';
+  return {
+    ink: dark?'#e9e4d8':'#21262c', mut: dark?'#8d97a1':'#6d747c',
+    grid: dark?'rgba(140,150,160,.13)':'rgba(80,75,60,.15)',
+    amber: dark?'#d9a441':'#a8761d', teal: dark?'#56a8a3':'#2e7672',
+    rust: dark?'#c4604f':'#a8442f', green: dark?'#5d9e6b':'#3c7a4b',
+    slate: dark?'#7d8fa3':'#8a93a0', faint: dark?'rgba(86,168,163,.25)':'rgba(46,118,114,.2)'
+  };
+}
+var charts=[];
+function mk(id,cfg){
+  var el=document.getElementById(id); if(!el) return;
+  var c=new Chart(el.getContext('2d'),cfg); charts.push(c);
+}
+function baseOpts(p,yTitle){
+  return {responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:p.ink,font:{size:10.5},boxWidth:11,padding:8}},tooltip:{mode:'index',intersect:false}},
+    scales:{x:{ticks:{color:p.mut,font:{size:10}},grid:{color:p.grid}},
+            y:{ticks:{color:p.mut,font:{size:10}},grid:{color:p.grid},title:yTitle?{display:true,text:yTitle,color:p.mut,font:{size:10}}:undefined}}};
+}
+/* ---------- charts ---------- */
+function buildCharts(){
+  charts.forEach(function(c){c.destroy()}); charts=[];
+  var p=pal();
+  if(typeof Chart==='undefined') return;
+  Chart.defaults.font.family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+
+  /* radar — quality scorecard */
+  mk('chRadar',{type:'radar',data:{labels:['Growth','Profitability','Balance sheet','Earnings quality','Governance','Valuation'],
+    datasets:[{label:'AEGISLOG (1–5)',data:[4,3,4,3,3,2],backgroundColor:p.faint,borderColor:p.teal,pointBackgroundColor:p.amber,borderWidth:1.5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{r:{min:0,max:5,ticks:{display:false},angleLines:{color:p.grid},grid:{color:p.grid},pointLabels:{color:p.ink,font:{size:10.5}}}}}});
+
+  /* relative performance — indexed [Estimated] */
+  mk('chRel',{type:'line',data:{labels:['Jun-21','Jun-22','Jun-23','Jun-24','Jun-25','Jun-26'],
+    datasets:[
+      {label:'AEGISLOG [Est. from price history]',data:[100,61,87,217,221,210],borderColor:p.amber,backgroundColor:'transparent',borderWidth:2,tension:.25,pointRadius:2.5},
+      {label:'Nifty 50 [Est]',data:[100,104,126,158,170,187],borderColor:p.slate,backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,3],tension:.25,pointRadius:0},
+      {label:'Nifty Smallcap 100 [Est]',data:[100,96,128,196,212,235],borderColor:p.teal,backgroundColor:'transparent',borderWidth:1.5,borderDash:[2,3],tension:.25,pointRadius:0}
+    ]},options:baseOpts(p,'Indexed = 100 (Jun-21)')});
+
+  /* annual rev + PAT bars, OPM line */
+  mk('chAnnual',{type:'bar',data:{labels:['FY22','FY23','FY24','FY25','FY26'],
+    datasets:[
+      {label:'Revenue ₹Cr',data:[4631,8627,7046,6764,8333],backgroundColor:p.faint,borderColor:p.teal,borderWidth:1,yAxisID:'y'},
+      {label:'PAT (total) ₹Cr',data:[385,511,672,787,1107],backgroundColor:p.amber,yAxisID:'y'},
+      {label:'OPM %',data:[11.5,7.8,13.1,16.2,17.4],type:'line',borderColor:p.rust,backgroundColor:'transparent',yAxisID:'y2',borderWidth:2,pointRadius:3,tension:.2}
+    ]},options:(function(){var o=baseOpts(p,'₹ Cr');o.scales.y2={position:'right',ticks:{color:p.mut,font:{size:10},callback:function(v){return v+'%'}},grid:{display:false},min:0,max:30};return o})()});
+
+  /* quarterly */
+  mk('chQtr',{type:'bar',data:{labels:['Q4-23','Q1-24','Q2-24','Q3-24','Q4-24','Q1-25','Q2-25','Q3-25','Q4-25','Q1-26','Q2-26','Q3-26','Q4-26'],
+    datasets:[
+      {label:'Revenue ₹Cr',data:[2154,2101,1235,1873,1837,1601,1750,1707,1705,1719,2294,1725,2594],backgroundColor:p.faint,borderColor:p.teal,borderWidth:1},
+      {label:'PAT ₹Cr',data:[159,133,150,152,237,158,152,160,318,175,244,233,455],backgroundColor:p.amber}
+    ]},options:baseOpts(p,'₹ Cr')});
+
+  /* margins OPM & ROCE */
+  mk('chMargins',{type:'line',data:{labels:['FY22','FY23','FY24','FY25','FY26'],
+    datasets:[
+      {label:'OPM %',data:[11.5,7.8,13.1,16.2,17.4],borderColor:p.amber,backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.2},
+      {label:'RoCE %',data:[16.4,13.4,14.9,12.5,15.5],borderColor:p.teal,backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.2},
+      {label:'WACC 13.42% [E]',data:[13.42,13.42,13.42,13.42,13.42],borderColor:p.mut,backgroundColor:'transparent',borderWidth:1,borderDash:[4,4],pointRadius:0}
+    ]},options:baseOpts(p,'%')});
+
+  /* cash: CFO vs PAT vs FCF */
+  mk('chCash',{type:'bar',data:{labels:['FY22','FY23','FY24','FY25','FY26'],
+    datasets:[
+      {label:'CFO ₹Cr',data:[280,358,656,558,2028],backgroundColor:p.teal},
+      {label:'PAT ₹Cr',data:[385,511,672,787,1107],backgroundColor:p.amber},
+      {label:'FCF ₹Cr',data:[101,-573,-57,-905,-505],backgroundColor:p.rust}
+    ]},options:baseOpts(p,'₹ Cr')});
+
+  /* WC days */
+  mk('chWC',{type:'line',data:{labels:['FY22','FY23','FY24','FY25','FY26'],
+    datasets:[
+      {label:'Debtor days',data:[58,35,27,37,21],borderColor:p.amber,backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.2},
+      {label:'WC days (recv+inv)',data:[65,42,30,47,27],borderColor:p.teal,backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.2}
+    ]},options:baseOpts(p,'days')});
+
+  /* FY27e quarterly path */
+  mk('chFwdQ',{type:'bar',data:{labels:['Q1FY27e','Q2FY27e','Q3FY27e','Q4FY27e'],
+    datasets:[
+      {label:'Revenue ₹Cr [Est]',data:[1950,2250,2350,2783],backgroundColor:p.faint,borderColor:p.teal,borderWidth:1},
+      {label:'EPS ₹ (owners) [Est]',data:[4.6,6.2,6.7,9.5],type:'line',borderColor:p.amber,backgroundColor:'transparent',yAxisID:'y2',borderWidth:2,pointRadius:3}
+    ]},options:(function(){var o=baseOpts(p,'₹ Cr');o.scales.y2={position:'right',ticks:{color:p.mut,font:{size:10}},grid:{display:false},min:0,max:12};return o})()});
+
+  /* segment volumes */
+  mk('chSeg',{type:'bar',data:{labels:['Logistics (throughput)','Distribution','Sourcing'],
+    datasets:[
+      {label:'FY25 kMT',data:[4523,521,597],backgroundColor:p.slate},
+      {label:'FY26 kMT',data:[5152,754,607],backgroundColor:p.amber}
+    ]},options:baseOpts(p,"'000 MT")});
+
+  /* SHP stacked */
+  mk('chSHP',{type:'bar',data:{labels:['Jun-24','Sep-24','Dec-24','Mar-25','Jun-25','Sep-25','Dec-25','Mar-26'],
+    datasets:[
+      {label:'Promoter',data:[58.10,58.10,58.10,58.10,58.10,58.10,58.10,58.10],backgroundColor:p.amber},
+      {label:'FII',data:[17.65,17.93,18.22,18.06,16.79,16.88,17.87,19.56],backgroundColor:p.teal},
+      {label:'DII',data:[6.71,6.68,6.69,6.31,6.40,6.25,5.41,3.67],backgroundColor:p.slate},
+      {label:'Public',data:[17.55,17.29,16.99,17.52,18.71,18.76,18.64,18.67],backgroundColor:p.faint,borderColor:p.mut,borderWidth:1}
+    ]},options:(function(){var o=baseOpts(p,'% of equity');o.scales.x.stacked=true;o.scales.y.stacked=true;o.scales.y.max=100;return o})()});
+}
+/* ---------- football field (pure CSS/JS, no chart lib) ---------- */
+function buildFF(){
+  var lo=380,hi=1060,cmp=756,tp=855;
+  function x(v){return ((v-lo)/(hi-lo)*100).toFixed(2)+'%'}
+  var rows=[
+    {l:'DCF — Gordon (sens. range)',a:431,b:762,pt:541,c:'var(--rust)'},
+    {l:'SOTP — exit 12–14x EV/EBITDA',a:734,b:820,pt:777,c:'var(--teal)'},
+    {l:'P/E 28–32x FY27e own EPS',a:756,b:864,pt:842,c:'var(--amber)'},
+    {l:'Consensus TP range (n≈5)',a:620,b:1010,pt:837,c:'var(--slate, #7d8fa3)'},
+    {l:'52-week trading range',a:576,b:945,pt:756,c:'var(--mut, #6d7884)'}
+  ];
+  var h='';
+  rows.forEach(function(r){
+    h+='<div class="ffrow"><div class="ffl">'+r.l+' <span class="mut">'+r.a+'–'+r.b+'</span></div>'+
+       '<div class="fftrack"><div class="ffbar" style="left:'+x(r.a)+';width:calc('+x(r.b)+' - '+x(r.a)+');background:'+r.c+'"></div>'+
+       '<div class="ffpt" style="left:'+x(r.pt)+'"></div></div></div>';
+  });
+  h+='<div class="ffrow"><div class="ffl"></div><div class="fftrack" style="height:0;background:none">'+
+     '<div class="cmpline" style="left:'+x(cmp)+';height:0"></div></div></div>';
+  h+='<div class="ffax"><span>₹'+lo+'</span><span>CMP ₹'+cmp+' ▲ · TP ₹'+tp+'</span><span>₹'+hi+'</span></div>';
+  var el=document.getElementById('ffield'); if(el) el.innerHTML=h;
+  // overlay CMP & TP lines across all tracks
+  document.querySelectorAll('#ffield .fftrack').forEach(function(t,i){
+    if(t.style.height==='0px')return;
+    var c=document.createElement('div'); c.className='cmpline'; c.style.left=x(cmp); c.style.bottom='0'; c.style.top='0'; t.appendChild(c);
+    var d=document.createElement('div'); d.style.cssText='position:absolute;top:0;bottom:0;width:2px;background:var(--green);left:'+x(tp); t.appendChild(d);
+  });
+}
+buildFF();
+buildCharts();
+/* expand all panels for print */
+window.addEventListener('beforeprint',function(){document.querySelectorAll('.panel').forEach(function(p){p.classList.add('on')})});
+window.addEventListener('afterprint',function(){
+  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on')});
+  var act=document.querySelector('#tabbar button.on');
+  document.getElementById('p-'+(act?act.dataset.t:'snapshot')).classList.add('on');
+});
+</script>
+</body>
+</html>
